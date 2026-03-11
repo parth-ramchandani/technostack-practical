@@ -1,89 +1,140 @@
 # Product Management REST API
 
-A production-ready NestJS REST API for managing products with variants. Built with PostgreSQL, TypeORM, JWT authentication, and role-based access control (ADMIN/USER).
+A NestJS REST API for managing products with variants. Built with PostgreSQL, TypeORM, JWT authentication, and role-based access control (ADMIN/USER).
 
-## Tech Stack
+## Setup Instructions
 
-- **NestJS** - Progressive Node.js framework
-- **PostgreSQL** - Relational database
-- **TypeORM** - ORM for database management
-- **JWT** - Stateless authentication
-- **Role-Based Access Control** - ADMIN and USER roles
+### Prerequisites
 
-## Setup
+- Node.js v14+
+- npm v6+
+- PostgreSQL v12+
 
-Requirements: Node.js v14+, npm v6+, PostgreSQL v12+
+### Installation
 
 ```bash
 npm install
 cp .env.example .env
-# Update .env with your PostgreSQL credentials
-npm run start:dev
 ```
 
-## Environment Variables
+### Database Setup
 
-See `.env.example` for configuration options.
+1. Create PostgreSQL database:
 
-PostgreSQL Configuration:
-
-- `DATABASE_HOST` - PostgreSQL server host (default: localhost)
-- `DATABASE_PORT` - PostgreSQL server port (default: 5432)
-- `DATABASE_USERNAME` - Database user (default: postgres)
-- `DATABASE_PASSWORD` - Database password
-- `DATABASE_NAME` - Database name (default: product_db)
-- `DATABASE_SYNCHRONIZE` (default: true) - Auto-sync schema
-
-JWT Configuration:
-
-- `JWT_SECRET` - Secret key for signing tokens
-- `JWT_ACCESS_TOKEN_EXPIRY` (default: 15m) - Access token expiration
-- `JWT_REFRESH_TOKEN_EXPIRY` (default: 7d) - Refresh token expiration
-
-## Running
-
-```bash
-npm run start          # Development
-npm run start:dev      # Watch mode with auto-reload
-npm run start:debug    # Debug mode
-npm run start:prod     # Production
-```
-
-API runs on `http://localhost:3000`
-
-## Database Setup
-
-1. Install PostgreSQL (v12 or higher)
-2. Create a database:
    ```bash
    createdb product_db
    ```
-3. Update `.env` with your PostgreSQL credentials
-4. Tables are automatically created on startup (via `DATABASE_SYNCHRONIZE=true`)
 
-## API
+2. Update `.env` with your PostgreSQL credentials
 
-### Auth
+3. Tables are automatically created on startup
 
-- `POST /auth/register` - Register user with email and password
-- `POST /auth/login` - Login, returns access_token and refresh_token
-- `POST /auth/refresh` - Refresh access token
-- `POST /auth/logout` - Logout
+### Running the Application
 
-### Products
+```bash
+npm run start          # Production
+npm run start:dev      # Development with auto-reload
+npm run start:debug    # Debug mode
+npm run start:prod     # Optimized production
+```
 
-All product endpoints require JWT authentication header.
+The application runs on `http://localhost:3000`
 
-- `GET /products` - Get all products (paginated)
-  - Query: `page`, `limit`, `category`, `minPrice`, `maxPrice`, `attributes`
-- `GET /products/:id` - Get product by ID
-- `POST /products` - Create product (admin only)
-- `PUT /products/:id` - Update product (admin only)
-- `DELETE /products/:id` - Delete product (admin only)
+## Environment Variables
 
-#### Create Product Example
+Create a `.env` file based on `.env.example`:
 
-```json
+### PostgreSQL Configuration
+
+```env
+DATABASE_HOST=localhost
+DATABASE_PORT=5432
+DATABASE_USERNAME=postgres
+DATABASE_PASSWORD=your_password
+DATABASE_NAME=product_db
+DATABASE_SYNCHRONIZE=true
+DATABASE_LOGGING=false
+```
+
+### JWT Configuration
+
+```env
+JWT_SECRET=your-secret-key
+JWT_ACCESS_TOKEN_EXPIRY=15m
+JWT_REFRESH_TOKEN_EXPIRY=7d
+```
+
+## API Usage
+
+### Authentication Endpoints
+
+**Register User**
+
+```bash
+POST /auth/register
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "password": "password123",
+  "role": "USER"  # Optional: USER or ADMIN
+}
+```
+
+**Login**
+
+```bash
+POST /auth/login
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "password": "password123"
+}
+
+Response:
+{
+  "accessToken": "token...",
+  "refreshToken": "token..."
+}
+```
+
+**Refresh Token**
+
+```bash
+POST /auth/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "token..."
+}
+```
+
+**Logout**
+
+```bash
+POST /auth/logout
+Content-Type: application/json
+
+{
+  "refreshToken": "token..."
+}
+```
+
+### Product Endpoints
+
+All product endpoints require JWT authentication:
+
+```
+Authorization: Bearer <accessToken>
+```
+
+**Create Product (ADMIN only)**
+
+```bash
+POST /products
+Content-Type: application/json
+
 {
   "name": "Laptop",
   "description": "High-performance laptop",
@@ -99,130 +150,82 @@ All product endpoints require JWT authentication header.
 }
 ```
 
-## Project Structure
-
-```
-src/
-├── auth/              # Authentication module with JWT & Local strategies
-│   ├── auth.controller.ts
-│   ├── auth.service.ts
-│   ├── jwt-auth.guard.ts
-│   ├── jwt.strategy.ts
-│   ├── local-auth.guard.ts
-│   ├── local.strategy.ts
-│   ├── roles.decorator.ts
-│   ├── roles.guard.ts
-│   └── auth.module.ts
-├── products/          # Products module
-│   ├── products.controller.ts
-│   ├── products.service.ts
-│   └── products.module.ts
-├── entities/          # Database entities
-│   ├── user.entity.ts
-│   ├── product.entity.ts
-│   ├── product-variant.entity.ts
-│   └── refresh-token.entity.ts
-├── database/          # Database configuration
-│   └── database.module.ts
-├── common/            # Shared utilities
-│   └── user-role.enum.ts
-├── app.module.ts      # Main application module
-└── main.ts            # Application entry point
-```
-
-## Key Features
-
-- **User Authentication**: Register, login, refresh token, logout
-- **JWT Tokens**: Access tokens (15m) and refresh tokens (7d)
-- **Role-Based Access Control**: ADMIN and USER roles
-- **Product Management**: Create, read, update, soft-delete products
-- **Product Variants**: Support multiple variants per product with custom attributes
-- **Database Transactions**: Atomic operations for data consistency
-- **Validation**: Input validation with class-validator
-- **Security**: Password hashing with bcrypt, parameterized queries
-
-## Testing
+**Get All Products**
 
 ```bash
-npm run test           # Unit tests
-npm run test:watch    # Watch mode
-npm run test:e2e      # E2E tests
-npm run test:cov      # Coverage report
+GET /products?page=1&limit=10&category=Electronics&minPrice=500&maxPrice=2000
 ```
 
-## Code Quality
+**Get Product by ID**
 
 ```bash
-npm run format         # Format code with Prettier
-npm run lint           # Check and fix linting issues
+GET /products/:id
 ```
 
-## API Documentation
+**Update Product (ADMIN only)**
 
-Detailed API endpoints are documented above. All endpoints return JSON responses.
+```bash
+PUT /products/:id
+Content-Type: application/json
 
-### Authentication Flow
+{
+  "name": "Updated name",
+  "variants": [...]
+}
+```
 
-1. **Register**: Create new user account
+**Delete Product (ADMIN only)**
 
-   ```bash
-   POST /auth/register
-   ```
+```bash
+DELETE /products/:id
+```
 
-2. **Login**: Get JWT tokens
+## Design Decisions & Assumptions
 
-   ```bash
-   POST /auth/login
-   ```
+### Authentication & Authorization
 
-3. **Use Access Token**: Include in Authorization header
+- **JWT-based Authentication**: Stateless tokens for scalability
+- **Dual Token System**: Short-lived access tokens (15m) + long-lived refresh tokens (7d)
+- **Role-Based Access Control**: Two roles - ADMIN (create/update/delete) and USER (read-only)
+- **Assumption**: Email is unique per user; no duplicate registrations allowed
 
-   ```
-   Authorization: Bearer <access_token>
-   ```
+### Product Management
 
-4. **Refresh**: Get new access token when expired
+- **Product Variants**: Each product supports multiple variants with different SKUs and prices
+- **Soft Deletes**: Deleted products are marked as deleted, not permanently removed
+- **Dynamic Attributes**: Product variants support flexible JSON attributes for extensibility
+- **Assumption**: Variant SKUs must be unique within a product
 
-   ```bash
-   POST /auth/refresh
-   ```
+### Database
 
-5. **Logout**: Invalidate refresh token
-   ```bash
-   POST /auth/logout
-   ```
+- **PostgreSQL**: Chosen for relational data and ACID compliance
+- **TypeORM**: Provides type-safe database operations and migration support
+- **Auto-Synchronization**: Schema automatically syncs with entity definitions on startup
+- **Assumption**: Database is PostgreSQL; other databases require configuration changes
 
-## Best Practices Implemented
+### Security
 
-- ✅ TypeORM for database abstraction
-- ✅ JWT-based stateless authentication
-- ✅ Role-based authorization with guards
-- ✅ Database transaction management
-- ✅ Input validation and sanitization
-- ✅ Error handling and exception filters
-- ✅ Separation of concerns (Controllers/Services)
-- ✅ Environment-based configuration
-- ✅ Passport.js for authentication strategies
-- ✅ Password hashing with bcrypt
+- **Password Hashing**: Bcrypt with salt for secure password storage
+- **JWT Validation**: All protected endpoints validate token on every request
+- **Refresh Token Storage**: Hashed tokens stored in database for logout functionality
+- **Assumptions**:
+  - Users must authenticate before accessing protected resources
+  - Tokens are immutable once issued
+  - Refresh tokens are invalidated on logout
 
-## Troubleshooting
+### API Design
 
-**Connection refused on PostgreSQL**
+- **RESTful Principles**: Standard HTTP methods (GET, POST, PUT, DELETE)
+- **Pagination**: Products endpoint supports pagination (page, limit)
+- **Filtering**: Products can be filtered by category, price range, and attributes
+- **Assumptions**: API clients will properly handle pagination; large datasets will not be returned without limits
 
-- Ensure PostgreSQL is running
-- Check DATABASE_HOST and DATABASE_PORT in .env
-- Verify database exists: `psql -l`
+### Code Quality
 
-**Invalid token errors**
-
-- Ensure JWT_SECRET is set in .env
-- Token may be expired, use refresh endpoint
-- Check Authorization header format
-
-**Permission denied errors**
-
-- Verify user role is ADMIN for protected operations
-- Check token payload contains correct role
+- **Separation of Concerns**: Controllers handle HTTP, Services handle business logic
+- **Validation**: Input validation using class-validator
+- **Error Handling**: Try-catch blocks with proper error responses
+- **Configuration Management**: Environment variables for all environment-specific values
 
 ## License
 
